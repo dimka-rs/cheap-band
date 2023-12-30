@@ -1,7 +1,9 @@
 #!/bin/bash
 # 02:FC:25:D7:6F:E3 B02
 DEVNAME=B02
-WRITE_CHR="6E400002-B5A3-F393-E0A9-E50E24DCCA9F";
+CHAR="6E400002-B5A3-F393-E0A9-E50E24DCCA9F";
+WRHNDL="0x0034"
+# 0034 - handle for write characteristic
 
 if [ -z "$1" ]; then
     echo "Scanning..."
@@ -12,17 +14,28 @@ else
     MAC=$1
 fi
 
-echo "Battery level:"
-BAT=`gatttool --device=$MAC --char-read --uuid=0x2a19 |sed -e 's/^.*://'`
-echo "`echo \"ibase=16; $BAT\"|bc` %"
+#echo "Battery level:"
+#BAT=`gatttool --device=$MAC --char-read --uuid=0x2a19 |sed -e 's/^.*://'`
+#echo "`echo \"ibase=16; $BAT\"|bc` %"
 
 
-# 0034 - handle for write characteristic
-# msg: type+sender+:+string
-# type 1 - sms
-echo "End call:"
-gatttool --device=$MAC --char-write-req --handle=0x0034 --value=DF0005F80201110000
+#echo "End call:"
+#gatttool --device=$MAC --char-write-req --handle=$WRHNDL --value=DF0005F80201110000
 
+# msg types:
+#  1 sms
+#  2 qq
+#  3 wechat
+#  4 facebook
+#  5 twitter
+#  6 skype
+#  7 line
+#  8 whatsapp
+#  9 kakaotalk
+# 10 instagram
+
+echo "SMS:"
+gatttool --device=$MAC --char-write-req --handle=$WRHNDL --value=DF000FAE02011200140100003132333A414243
 
 #echo "Primary:"
 #gatttool --device=$MAC --primary
