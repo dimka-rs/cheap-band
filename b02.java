@@ -6,11 +6,11 @@ import java.io.IOException;
 class HelloWorld {
     public static String MAC = "02:FC:25:D7:6F:E3";
     public static String HANDLE = "0x0034";
-    // currently only 8 chars of payload fit, maybe MTU issue, MTU is 20
-    // need to call gatttool several times
-    public static String sender_str  = "Sender";
-    public static String message_str = "123456789A123456789B123456789C123456789D123456789E123456789F";
-    public static byte message_type = 2;
+    public static String message_str = "123456789A123456789B123456789C123456789D123456789E123456789F123456789G";
+    /*  1 - sms, 2 - qq, 3 - wechat, 4 - facebook, 5 - twitter
+        6 - skype, 7 - line, 8 - whatsapp, 9 - talk, 10 - instagram
+        other values will work, but no icon will appear */
+    public static byte message_type = 1;
     public static byte mtu = 20;
 
     public static void main(String[] args) {
@@ -18,9 +18,8 @@ class HelloWorld {
         //byte[] in  = new byte[] {-33,0,15,2,1,18,0,20,1,0,0,'1','2','3',':','A','B','C'};// sms
 
         byte[] hdr = new byte[] {-33,0,15,2,1,18,0,20,1,0,0};
-        byte[] sender = sender_str.getBytes(StandardCharsets.UTF_8);
         byte[] message = message_str.getBytes(StandardCharsets.UTF_8);
-        byte[] in = new byte[hdr.length + sender.length + 1 + message.length];
+        byte[] in = new byte[hdr.length + message.length];
 
         if (in.length > 200) {
             System.out.println("Payload too long!");
@@ -30,16 +29,11 @@ class HelloWorld {
         int ptr = 0;
         System.arraycopy(hdr, 0, in, ptr, hdr.length);
         ptr += hdr.length;
-        System.arraycopy(sender, 0, in, ptr, sender.length);
-        ptr += sender.length;
-        in[ptr] = ':';
-        ptr += 1;
         System.arraycopy(message, 0, in, ptr, message.length);
-        int payloadlen = sender.length + 1 + message.length;
-        in[1] = (byte) ((payloadlen + 8) >> 8);
-        in[2] = (byte) ((payloadlen + 8) & 255);
-        in[6] = (byte) ((payloadlen + 3) >> 8);
-        in[7] = (byte) ((payloadlen + 3) & 255);
+        in[1] = (byte) ((message.length + 8) >> 8);
+        in[2] = (byte) ((message.length + 8) & 255);
+        in[6] = (byte) ((message.length + 3) >> 8);
+        in[7] = (byte) ((message.length + 3) & 255);
         in[8] = message_type;
 
         byte[] out = HelloWorld.addSumCheck(in);
