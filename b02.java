@@ -6,7 +6,10 @@ import java.util.Calendar;
 
 class HelloWorld {
     public static String MAC = "02:FC:25:D7:6F:E3";
-    public static String HANDLE = "0x0034";
+    /* notify "6E400003-B5A3-F393-E0A9-E50E24DCCA9F" */
+    public static String HANDLE_NF = "0x0030";
+    /* write "6E400002-B5A3-F393-E0A9-E50E24DCCA9F" */
+    public static String HANDLE_WR = "0x0034";
     /* band can only handle 20 bytes at a time */
     public static byte mtu = 20;
 
@@ -15,11 +18,13 @@ class HelloWorld {
 
     public static void main(String[] args) {
 
-    //notifyMessage(1, message);
-    //notifyCall(0, message);
-    //notifyCall(1, "");
+        //notifyMessage(1, message);
+        //notifyCall(2, message);
+        //notifyCall(1, "");
 
-    System.out.printf("Battery: %d%%%n", getBattery());
+        //settingSysTime();
+        findBand();
+        //System.out.printf("Battery: %d%%%n", getBattery());
 
     }
 
@@ -56,7 +61,7 @@ class HelloWorld {
 
     static boolean sendChunk(byte[] data) {
         ProcessBuilder pb = new ProcessBuilder();
-        pb.command("gatttool", "--device="+MAC, "--char-write-req", "--handle="+HANDLE, "--value="+bytesToHex(data));
+        pb.command("gatttool", "--device="+MAC, "--char-write-req", "--handle="+HANDLE_WR, "--value="+bytesToHex(data));
         System.out.println(String.join(" ",pb.command().toArray(new String[0])));
 
         try {
@@ -219,6 +224,12 @@ class HelloWorld {
         }
         return -1;
     }
+
+    public static void findBand()
+    {
+        send(getSendByte((byte) 2, (byte) 11));
+    }
+
 }
 
 
