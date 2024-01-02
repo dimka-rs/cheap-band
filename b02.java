@@ -2,53 +2,42 @@ import java.nio.charset.StandardCharsets;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.Calendar;
 
 class HelloWorld {
     public static String MAC = "02:FC:25:D7:6F:E3";
     public static String HANDLE = "0x0034";
-    public static String message_str = "123456789A123456789B123456789C123456789D123456789E123456789F123456789G";
-    /*  1 - sms, 2 - qq, 3 - wechat, 4 - facebook, 5 - twitter
-        6 - skype, 7 - line, 8 - whatsapp, 9 - talk, 10 - instagram
-        other values will work, but no icon will appear */
-    public static byte message_type = 1;
+    /* band can only handle 20 bytes at a time */
     public static byte mtu = 20;
 
+    //public static String message = "123456789A123456789B123456789C123456789D123456789E123456789F123456789G";
+    public static String message = "123456789A123456789B";
+
     public static void main(String[] args) {
-        //byte[] in  = new byte[] {-33,0,5,2,1,17,0,0};// call end
-        //byte[] in  = new byte[] {-33,0,15,2,1,18,0,20,1,0,0,'1','2','3',':','A','B','C'};// sms
 
-        byte[] hdr = new byte[] {-33,0,15,2,1,18,0,20,1,0,0};
-        byte[] message = message_str.getBytes(StandardCharsets.UTF_8);
-        byte[] in = new byte[hdr.length + message.length];
+    //notifyMessage(1, message);
+    notifyCall(0, message);
+    //notifyCall(1, "");
 
-        if (in.length > 200) {
-            System.out.println("Payload too long!");
-            return;
-        }
+    }
 
-        int ptr = 0;
-        System.arraycopy(hdr, 0, in, ptr, hdr.length);
-        ptr += hdr.length;
-        System.arraycopy(message, 0, in, ptr, message.length);
-        in[1] = (byte) ((message.length + 8) >> 8);
-        in[2] = (byte) ((message.length + 8) & 255);
-        in[6] = (byte) ((message.length + 3) >> 8);
-        in[7] = (byte) ((message.length + 3) & 255);
-        in[8] = message_type;
-
-        byte[] out = HelloWorld.addSumCheck(in);
+    static void send(byte[] data) {
         //System.out.println(bytesToHex(out));
+        if (data[0] == -33)
+        {
+            data = HelloWorld.addSumCheck(data);
+        }
 
         boolean isLinux = System.getProperty("os.name").toLowerCase().startsWith("linux");
         if (isLinux) {
 
-            while (out.length > mtu) {
+            while (data.length > mtu) {
                 byte[] toSend = new byte[mtu];
-                System.arraycopy(out, 0, toSend, 0, mtu);
-                int length = out.length - mtu;
+                System.arraycopy(data, 0, toSend, 0, mtu);
+                int length = data.length - mtu;
                 byte[] remaining = new byte[length];
-                System.arraycopy(out, mtu, remaining, 0, length);
-                if (!send(toSend)) {
+                System.arraycopy(data, mtu, remaining, 0, length);
+                if (!sendChunk(toSend)) {
                     return;
                 };
                 try {
@@ -57,13 +46,13 @@ class HelloWorld {
                 catch (Exception e) {
                     e.printStackTrace();
                 }
-                out = remaining;
+                data = remaining;
             }
-            send(out);
+            sendChunk(data);
         }
     }
 
-    static boolean send(byte[] data) {
+    static boolean sendChunk(byte[] data) {
         ProcessBuilder pb = new ProcessBuilder();
         pb.command("gatttool", "--device="+MAC, "--char-write-req", "--handle="+HANDLE, "--value="+bytesToHex(data));
         System.out.println(String.join(" ",pb.command().toArray(new String[0])));
@@ -114,6 +103,74 @@ class HelloWorld {
         bArr[3] = (byte) (i & 255);
         System.arraycopy(bytes, 3, bArr, 4, bytes.length - 3);
         return bArr;
+    }
+
+    public static byte[] getSendByte(byte commandId, byte key, byte[] value) {
+        byte[] bArr = new byte[value.length + 8];
+        bArr[0] = -33; // header
+        bArr[1] = (byte) ((value.length + 5) >> 8);
+        bArr[2] = (byte) ((value.length + 5) & 255);
+        bArr[3] = commandId;
+        bArr[4] = 1; //protocol version
+        bArr[5] = key;
+        bArr[6] = (byte) (value.length >> 8);
+        bArr[7] = (byte) (value.length & 255);
+        System.arraycopy(value, 0, bArr, 8, value.length);
+        return bArr;
+    }
+
+    public static byte[] getSendByte(byte commandId, byte key) {
+        return new byte[]{-33, 0, 5, commandId, 1, key, 0, 0};
+    }
+
+    public static void settingSysTime() {
+        Calendar calendar = Calendar.getInstance();
+        int i = calendar.get(1); // Year
+        int i2 = calendar.get(2) + 1; // month
+        int i3 = calendar.get(5); // date
+        int i4 = calendar.get(11); // hour
+        int i5 = calendar.get(12); // minute
+        byte[] data = getSendByte((byte) 2, (byte) 1, new byte[]{(byte) (((i - 2000) << 2) + ((i2 & 255) >> 2)), (byte) (((i2 & 3) << 6) + (i3 << 1) + (i4 >> 4)), (byte) (((i4 & 15) << 4) + (i5 >> 2)), (byte) (((i5 & 3) << 6) + calendar.get(13))});
+        send(data);
+    }
+
+    public static void notifyMessage(int type, String message_str)
+    {
+        /*  1 - sms, 2 - qq, 3 - wechat, 4 - facebook, 5 - twitter
+            6 - skype, 7 - line, 8 - whatsapp, 9 - talk, 10 - instagram
+            other values will work, but no icon will appear */
+        byte[] bytes = message_str.getBytes(StandardCharsets.UTF_8);
+
+        if (bytes.length > 196) {
+            System.out.println("Payload too long!");
+            return;
+        }
+
+        byte[] data = new byte[bytes.length + 3];
+        data[0] = (byte) type;
+        System.arraycopy(bytes, 0, data, 3, bytes.length);
+        send(getSendByte((byte) 2, (byte) 18, data));
+    }
+
+    public static void notifyCall(int type, String message_str)
+    {
+        if (message_str.length() > 0)
+        {
+            /* Ringing */
+            byte[] bytes = message_str.getBytes(StandardCharsets.UTF_8);
+            byte[] data = new byte[bytes.length + 2];
+            /* 0 - hangup, 1 - ringing, 2 - ongoing? */
+            data[0] = (byte) type;
+            data[1] = 0;
+            for (int i = 0; i < bytes.length; i++)
+            {
+                data[i + 2] = bytes[i];
+            }
+            send(getSendByte((byte) 2, (byte) 17, data));
+        } else {
+            /* Hangup */
+            send(getSendByte((byte) 2, (byte) 17));
+        }
     }
 }
 
