@@ -16,8 +16,10 @@ class HelloWorld {
     public static void main(String[] args) {
 
     //notifyMessage(1, message);
-    notifyCall(0, message);
+    //notifyCall(0, message);
     //notifyCall(1, "");
+
+    System.out.printf("Battery: %d%%%n", getBattery());
 
     }
 
@@ -79,6 +81,33 @@ class HelloWorld {
             e.printStackTrace();
         }
         return true;
+    }
+
+    static String readChar(String uuid) {
+        ProcessBuilder pb = new ProcessBuilder();
+        pb.command("gatttool", "--device="+MAC, "--char-read", "--uuid="+uuid);
+        System.out.println(String.join(" ",pb.command().toArray(new String[0])));
+
+        try {
+            Process process = pb.start();
+            StringBuilder output = new StringBuilder();
+            BufferedReader reader = new BufferedReader(
+            new InputStreamReader(process.getInputStream()));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line + "\n");
+            }
+
+            int exitVal = process.waitFor();
+            System.out.println("Exit: " + String.valueOf(exitVal));
+            System.out.println(output);
+            return output.toString();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
 
@@ -171,6 +200,24 @@ class HelloWorld {
             /* Hangup */
             send(getSendByte((byte) 2, (byte) 17));
         }
+    }
+
+    public static int getBattery()
+    {
+        String out = readChar("0x2a19");
+        int idx = out.indexOf("value: ");
+
+        if (idx != -1) {
+            try {
+                int val = Integer.parseInt(out.substring(idx + 7).trim(), 16);
+
+                return val;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid integer input");
+            }
+
+        }
+        return -1;
     }
 }
 
