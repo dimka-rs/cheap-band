@@ -23,8 +23,9 @@ class HelloWorld {
         //notifyCall(1, "");
 
         //settingSysTime();
-        findBand();
-        //System.out.printf("Battery: %d%%%n", getBattery());
+        //findBand();
+        System.out.printf("Battery: %d%%%n", getBattery());
+        getStep();
 
     }
 
@@ -229,6 +230,74 @@ class HelloWorld {
     {
         send(getSendByte((byte) 2, (byte) 11));
     }
+
+    public static void getStep()
+    {
+        boolean isOpen = true;
+        send(getSendByte((byte) 5, (byte) 6, new byte[]{isOpen ? (byte) 1 : (byte) 0}));
+        // Notification handle = 0x0030 value: fd 00 05 18 05 06 00 0a 01
+        // Notification handle = 0x0030 value: df 00 11 f8 05 01 0c 00 0c 00 00 00 b2 00 00 00 75 00 00 0d
+        // Notification handle = 0x0030 value: b6
+        // Passed to HealthUtils.analusis -> getTotalStepData
+        // 00 00 00 b2 - steps (178) band reads 178 steps
+        // 00 00 00 75 - distance (117) band reads 0.11 km
+        // 00 00 0d b6 - calories (3510) band reads 3 kcal
+
+        /*
+            onChange -> dataHandle -> handleAck -> setSettingSuccess -> getDataStatus
+                    -> onRead
+            CHARACTERISTIC_NOTIFY
+
+
+        public static byte[] setAutoUpdate(boolean isAutoUpdate) {
+            return new byte[]{IssuedUtil.ACK_HEADER, 0, 6, 5, 1, 6, 0, 1, isAutoUpdate ? (byte) 1 : (byte) 0};
+        }
+
+        */
+    }
+
+    /*
+    // Not supported on B02
+    public static void setWatchFace(int faceCode)
+    {
+        // Looks like not supported on B02
+        send(getSendByte((byte) 15, (byte) 3, new byte[]{(byte) (faceCode >> 8), (byte) (faceCode & 255)}));
+
+        // same for dial code
+        send(getSendByte((byte) 15, (byte) 10, new byte[]{(byte) (faceCode >> 8), (byte) (faceCode & 255)}));
+    }
+    */
+
+    /*
+    // Most likely weather is not supported on B02
+    public static byte[] setWeather(NetWeatherBean.DayWeatherBean bean, String cityName) {
+        if (cityName == null) {
+            cityName = "";
+        }
+        byte[] bytes = cityName.getBytes(StandardCharsets.UTF_8);
+        String[] split = bean.getDate().split("-");
+        int parseInt = Integer.parseInt(split[0]);
+        int length = bytes.length + 10;
+        byte[] bArr = new byte[length];
+        bArr[0] = (byte) (parseInt >> 8);
+        bArr[1] = (byte) (parseInt & 255);
+        bArr[2] = (byte) (Integer.parseInt(split[1]) & 255);
+        bArr[3] = (byte) (Integer.parseInt(split[2]) & 255);
+        bArr[4] = 0;
+        bArr[5] = (byte) bean.getWeatherCode();
+        int floor = (int) Math.floor(bean.getTempMin());
+        int ceil = (int) Math.ceil(bean.getTempMax());
+        if (ceil == floor) {
+            floor--;
+        }
+        bArr[6] = (byte) floor;
+        bArr[7] = (byte) ceil;
+        bArr[8] = (byte) bytes.length;
+        System.arraycopy(bytes, 0, bArr, 9, Math.min(bytes.length, 50));
+        bArr[length - 1] = (byte) bean.getTemperature();
+        return IssuedUtil.getSendByte((byte) 2, (byte) 29, bArr);
+    }
+    */
 
 }
 
