@@ -10,7 +10,11 @@ REing cheap smart bands. Inspired by https://xor.co.za/post/2022-11-30-hacking-s
 Supported:
 
 * text notifications with selectable app icon
-* call ended notification (commented out in the code)
+* call start/end notification
+* set band time
+* find band
+* get battery charge
+* get steps count (draft)
 
 !["B02 band"](img/b02.jpeg "B02 band")
 
@@ -20,3 +24,7 @@ Supported:
 Supported:
 
 * Vibration (find me)
+
+Hardware:
+
+* MCU: TLSR8232F512ET24
