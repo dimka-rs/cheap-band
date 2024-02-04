@@ -2,7 +2,6 @@
 
 REing cheap smart bands. Inspired by https://xor.co.za/post/2022-11-30-hacking-smartwatch/
 
-
 ## Supported bands
 
 ### B02 Band
@@ -28,3 +27,7 @@ Supported:
 Hardware:
 
 * MCU: TLSR8232F512ET24
+
+### Some URLs
+
+* https://punchthrough.com/creating-a-ble-peripheral-with-bluez/
