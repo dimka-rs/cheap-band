@@ -32,3 +32,4 @@ Hardware:
 
 * https://punchthrough.com/creating-a-ble-peripheral-with-bluez/
 * https://habr.com/en/articles/340330/
+* https://habr.com/en/articles/316462/
